@@ -56,6 +56,7 @@ public class RestAssuredTestCaseWriter extends BaseTestCaseWriter
     if( getDepends().validateResponses())
       {
       targetWriter.println( "import java.util.Map;");
+      targetWriter.println( "import java.util.Optional;");
       targetWriter.println( "import static java.util.stream.Collectors.toMap;");
       targetWriter.println();
       targetWriter.println( "import io.restassured.http.Header;");

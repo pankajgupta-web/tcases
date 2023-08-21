@@ -119,35 +119,48 @@ public final class TestCaseWriterUtils
    */
   public static void writeAuthCredentialsDef( String testName, IndentedWriter targetWriter, Depends dependencies)
     {
-    if( dependencies.dependsApiKey())
-      {
-      targetWriter.println();
-      targetWriter.println( "private String tcasesApiKey() {");
-      targetWriter.indent();
-      targetWriter.println( "String apiKey = System.getProperty( \"tcasesApiKey\");");
-      targetWriter.println( "return apiKey == null? \"\" : apiKey;");
-      targetWriter.unindent();
-      targetWriter.println( "}");
+      if(dependencies.dependsApiKey()) {
+        targetWriter.println();
+        targetWriter.println("private String tcasesApiKey() {");
+        targetWriter.indent();
+
+        targetWriter.println("return Optional.ofNullable(System.getProperty(\"tcasesApiKey.\" + this.getClass().getSimpleName()))");
+        targetWriter.indent();
+        targetWriter.indent(); // Twice to align with the return statement for better formatting.
+        targetWriter.println(".orElse(Optional.ofNullable(System.getProperty(\"tcasesApiKey\"))");
+        targetWriter.println(".orElse(\"\"));");
+        targetWriter.unindent();
+        targetWriter.unindent(); // Undo the double indentation
+
+        targetWriter.unindent(); // For closing brace
+        targetWriter.println("}");
       }
 
-    if( dependencies.dependsHttpBearer())
-      {
-      targetWriter.println();
-      targetWriter.println( "private String tcasesApiBearer() {");
-      targetWriter.indent();
-      targetWriter.println( "String bearer = System.getProperty( \"tcasesApiBearer\");");
-      targetWriter.println( "return bearer == null? \"\" : bearer;");
-      targetWriter.unindent();
-      targetWriter.println( "}");
-      targetWriter.println();
-      targetWriter.println( "private String tcasesApiBearerCredentials() {");
-      targetWriter.indent();
-      targetWriter.println( "return String.format( \"Bearer %s\", tcasesApiBearer());");
-      targetWriter.unindent();
-      targetWriter.println( "}");
+      if(dependencies.dependsHttpBearer()) {
+        targetWriter.println();
+        // For the tcasesApiBearer() method
+        targetWriter.println("private String tcasesApiBearer() {");
+        targetWriter.indent();
+        targetWriter.println("return Optional.ofNullable(System.getProperty(\"tcasesApiBearer.\" + this.getClass().getSimpleName()))");
+        targetWriter.indent();
+        targetWriter.indent(); // Twice to align with the return statement for better formatting.
+        targetWriter.println(".orElse(Optional.ofNullable(System.getProperty(\"tcasesApiBearer\"))");
+        targetWriter.println(".orElse(\"\"));");
+        targetWriter.unindent();
+        targetWriter.unindent(); // Undo the double indentation
+        targetWriter.unindent(); // For closing brace
+        targetWriter.println("}");
+
+        // For the tcasesApiBearerCredentials() method
+        targetWriter.println();
+        targetWriter.println("private String tcasesApiBearerCredentials() {");
+        targetWriter.indent();
+        targetWriter.println("return String.format(\"Bearer %s\", tcasesApiBearer());");
+        targetWriter.unindent();
+        targetWriter.println("}");
       }
 
-    if( dependencies.dependsHttpBasic())
+      if( dependencies.dependsHttpBasic())
       {
       targetWriter.println();
       targetWriter.println( "private String tcasesApiUser() {");
