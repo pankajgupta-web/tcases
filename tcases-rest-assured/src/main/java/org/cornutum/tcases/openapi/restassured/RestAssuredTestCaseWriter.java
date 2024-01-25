@@ -95,6 +95,7 @@ public class RestAssuredTestCaseWriter extends BaseTestCaseWriter
     {
     try
       {
+        //System.out.println( "****************** 12. TestCaseName ["+requestCase.getName()+"]");
       if( getDepends().validateResponses())
         {
         targetWriter.println( "Response response =");
@@ -146,6 +147,17 @@ public class RestAssuredTestCaseWriter extends BaseTestCaseWriter
             "responseValidator.assertHeadersValid( %s, %s, response.statusCode(), responseHeaders( response));",
             stringLiteral( requestCase.getOperation().toUpperCase()),
             stringLiteral( requestCase.getPath())));
+
+        //To write assertion logic for functional test cases provided by external file
+        if(requestCase.isFunctionalCase()) {
+          targetWriter.println(
+                  String.format(
+                          "responseValidator.assertWithExpectedResponse( %s, %s, response.statusCode(), response.getContentType(), response.asString(), %s);",
+                          stringLiteral( requestCase.getOperation().toUpperCase()),
+                          stringLiteral( requestCase.getPath()),
+                          stringLiteral(requestCase.getExpectedResponse().get("body"))));
+           }
+
         }
       }
     catch( Exception e)
@@ -350,7 +362,7 @@ public class RestAssuredTestCaseWriter extends BaseTestCaseWriter
    * Writes the request body for a target test case to the given stream.
    */
   protected void writeBody( String testName, RequestCase requestCase, IndentedWriter targetWriter)
-    {
+    { //Here Body data is being set based on content type
     Optional.ofNullable( requestCase.getBody())
       .ifPresent( body -> {
         Optional.ofNullable( body.getValue())

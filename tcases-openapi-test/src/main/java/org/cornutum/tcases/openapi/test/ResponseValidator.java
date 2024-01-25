@@ -10,6 +10,7 @@ package org.cornutum.tcases.openapi.test;
 import static org.cornutum.tcases.openapi.test.JsonUtils.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.File;
@@ -258,6 +259,14 @@ public class ResponseValidator
       }
     }
 
+    public void assertWithExpectedResponse( String op, String path, int statusCode, String contentType, String content, String expectedResponse){
+      ObjectMapper mapper = new ObjectMapper();
+      try {
+        boolean areTheyEqual = mapper.readTree(expectedResponse).equals(mapper.readTree(content));
+      }catch(Exception exception){
+        throw new ResponseValidationException( op, path, statusCode, "body", "can't validate content", exception);
+      }
+    }
   /**
    * Returns JSON representations of the given body content. Returns {@link Optional#empty} if no JSON representation is possible.
    */

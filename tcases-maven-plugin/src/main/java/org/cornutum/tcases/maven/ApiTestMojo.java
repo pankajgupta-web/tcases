@@ -7,6 +7,7 @@
 
 package org.cornutum.tcases.maven;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.cornutum.tcases.openapi.ApiTestCommand.Options;
 import org.cornutum.tcases.openapi.ApiTestCommand;
 import static org.cornutum.tcases.maven.MojoUtils.*;
@@ -17,9 +18,12 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.DirectoryScanner;
+import org.cornutum.tcases.openapi.test.RequestsDef;
+
 import static org.apache.commons.io.FilenameUtils.getPath;
 
 import java.io.File;
+import java.io.FileReader;
 import java.util.Optional;
 import java.util.Set;
 
@@ -77,9 +81,15 @@ public class ApiTestMojo extends AbstractMojo
         String inputFile = apiDefs[i];
         File apiDef = new File( inputRootDir, inputFile);
 
+        // file with req-res suffix (suffix can be changed later)the similar name as that of open file . "req-res.json" will be assigned to java static constant
+        String inputReqResFile = apiDefs[i].replaceFirst("[.][^.]+$", "").concat("-req-res.json");
+        File apiReqResDef = new File(inputRootDir, inputReqResFile);
+
         // Set generator options for this API definition.
         Options options = new Options();
         options.setApiDef( apiDef);
+        if(apiReqResDef.exists())
+          options.setApiReqResDef(apiReqResDef);
         options.setSource( getSource());
         options.setTestType( getTestType());
         options.setExecType( getExecType());

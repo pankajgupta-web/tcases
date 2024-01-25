@@ -7,6 +7,7 @@
 
 package org.cornutum.tcases.openapi;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.cornutum.tcases.HelpException;
 import org.cornutum.tcases.SystemInputDef;
 import org.cornutum.tcases.Tcases;
@@ -15,10 +16,12 @@ import org.cornutum.tcases.openapi.moco.MocoServerTestWriter;
 import org.cornutum.tcases.openapi.moco.MocoTestConfigReader;
 import org.cornutum.tcases.openapi.resolver.*;
 import org.cornutum.tcases.openapi.restassured.RestAssuredTestCaseWriter;
+import org.cornutum.tcases.openapi.test.RequestsDef;
 import org.cornutum.tcases.openapi.testwriter.*;
 import org.cornutum.tcases.resolve.ResolverContext;
 import org.cornutum.tcases.util.Notifier;
 
+import static java.util.Comparator.comparing;
 import static org.cornutum.tcases.CommandUtils.*;
 import static org.cornutum.tcases.util.CollectionUtils.toStream;
 
@@ -28,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
@@ -1363,7 +1367,10 @@ public class ApiTestCommand
       {
       apiDef_ = apiDef;
       }
-
+    public void setApiReqResDef( File apiReqResDef)
+      {
+        apiReqResDef_ = apiReqResDef;
+      }
     /**
      * Returns the Open API v3 API definition file
      */
@@ -1372,6 +1379,10 @@ public class ApiTestCommand
       return apiDef_;
       }
 
+    public File getApiReqResDef()
+      {
+        return apiReqResDef_;
+      }
     /**
      * Changes the current working directory used to complete relative path names.
      */
@@ -1581,6 +1592,8 @@ public class ApiTestCommand
       }
 
     private File apiDef_;
+
+    private File apiReqResDef_;
     private TestType testType_;
     private ExecType execType_;
     private String testName_;
@@ -1849,6 +1862,63 @@ public class ApiTestCommand
       // Generate API request test cases
       RequestTestDef testDef = RequestCases.getRequestCases( Tcases.getTests( inputDef, null, null), options.getResolverContext());
 
+      //To get functional testCases from external file
+      RequestsDef requestsDef=new RequestsDef(org.cornutum.tcases.openapi.test.JsonUtils.readJson(new FileReader(options.getApiReqResDef())).deepCopy());
+
+      //Setting Functional TestCase into requestCase and adding it into testDefinitions
+      if(options.getApiReqResDef().exists()) {
+        requestsDef.getRoots().get("requests").forEach(
+                jsonNode -> {
+                  RequestCase requestCase = new RequestCase(((RequestCase) testDef.getRequestCases().stream().max(comparing(RequestCase::getId)).get()).getId() + 1);
+                  requestCase.setPath(jsonNode.get("url").asText());
+                  //requestCase.setBody(Optional.ofNullable(jsonNode.get("method").asText().toUpperCase()).orElse("test"));
+                  requestCase.setName(jsonNode.get("id").asText());
+                  requestCase.setName(jsonNode.get("id").asText());
+                  requestCase.setfunctionalCase(true);
+                  requestCase.setExpectedResponse(jsonNode.get("response").deepCopy());
+
+                  requestCase.setOperation(
+                          Optional.ofNullable(jsonNode.get("method").asText().toUpperCase())
+                                  .orElseThrow( () -> new RequestCaseException( "No Method defined in Functional Requests")));
+
+                  requestCase.setServer(
+                          Optional.ofNullable( inputDef.getAnnotation( "server"))
+                                  .map( uri -> {
+                                    try
+                                    {
+                                      return new URI( uri);
+                                    }
+                                    catch( Exception e)
+                                    {
+                                      throw new RequestCaseException( "Can't convert server URI", e);
+                                    }
+                                  })
+                                  .orElse( null));
+
+                  requestCase.setVersion(
+                          Optional.ofNullable( inputDef.getAnnotation( "version"))
+                                  .orElseThrow( () -> new RequestCaseException( "No version annotation defined")));
+
+                  requestCase.setApi(Optional.ofNullable( inputDef.getAnnotation( "title"))
+                          .orElseThrow( () -> new RequestCaseException( "No title annotation defined")));
+
+                  Integer responseStatusCode=jsonNode.get("response").get("status_code").asInt();
+                  if(responseStatusCode >= 400 && responseStatusCode <= 500) {
+                      requestCase.setInvalidInput("ERROR STATUS");
+                      if(responseStatusCode == 401) {
+                        requestCase.setInvalidInput("UNAUTHORIZED");
+                        requestCase.setAuthFailure(true);
+                      }
+                  }
+
+                  testDef.add(requestCase);
+                });
+      }
+      //Uncomment To compare Json Strings
+      /*String s1= "{\"employee\":{\"id\":\"1212\",\"fullName\":\"John Miles\",\"age\":34,\"contact\":{\"email\":\"john@xyz.com\",\"phone\":\"9999999999\"},\"skills\": [\"Python\", \"C++\", \"Java\"] }}";
+        String s2="{\"employee\":{\"skills\": [\"Python\", \"C++\", \"Java\"],\"contact\":{\"phone\":\"9999999999\",\"email\":\"john@xyz.com\"},\"fullName\":\"John Miles\",\"id\":\"1212\",\"age\":34}}"; ObjectMapper mapper = new ObjectMapper();
+        boolean areTheyEqual = mapper.readTree(s1).equals(mapper.readTree(s2));
+        */
       // Write API tests for realized request cases only
       TestSource testSource = options.getTestSource( RequestCases.realizeRequestCases( testDef));
       if( apiDefFile != null && options.hasResources())
@@ -1898,7 +1968,7 @@ public class ApiTestCommand
           }
         }
       else
-        {
+        {//currently writing all API test cases
         logger_.info( "Writing all API tests to {}", Objects.toString( getTestFile( testWriter, testSource, testTarget),  "standard output"));
         logTestResourceDir( options, testWriter, testSource, testTarget);
         writeTest( testWriter, testSource, testTarget);

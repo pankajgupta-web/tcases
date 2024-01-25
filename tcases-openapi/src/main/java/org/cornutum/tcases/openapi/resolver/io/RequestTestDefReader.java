@@ -10,6 +10,7 @@ package org.cornutum.tcases.openapi.resolver.io;
 import org.cornutum.tcases.openapi.resolver.RequestCaseException;
 import org.cornutum.tcases.openapi.resolver.RequestTestDef;
 import org.apache.commons.io.IOUtils;
+import org.cornutum.tcases.openapi.testwriter.TestWriterException;
 import org.leadpony.justify.api.JsonSchema;
 import org.leadpony.justify.api.JsonValidationService;
 import org.leadpony.justify.api.ProblemHandler;
@@ -18,6 +19,8 @@ import java.io.Closeable;
 import java.io.InputStream;
 import javax.json.JsonArray;
 import javax.json.JsonReader;
+
+import static org.cornutum.tcases.openapi.testwriter.TestWriterUtils.stringLiteral;
 
 /**
  * Reads a {@link RequestTestDef} object from a JSON document.
@@ -60,6 +63,8 @@ public class RequestTestDefReader implements Closeable
         {
         throw new RequestCaseException( "Invalid request case definition", e);
         }
+
+      //System.out.println( "****************** 11. requestCaseJson  ["+json+"]");
 
       return new RequestTestDef( RequestCaseJson.asRequestCases( json));
       }

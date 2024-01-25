@@ -26,7 +26,7 @@ public class ApiTestMojoTest extends AbstractMojoTest
   public void execute() throws Exception
     {
     // Given...
-    File baseDirTest = getBaseDirTest( "api-test-project");
+    File baseDirTest = getBaseDirTest( "sample-test-file");
 
     // When...
     ApiTestMojo apiTestMojo = (ApiTestMojo) mojoHelper.lookupConfiguredMojo( baseDirTest, "api-test");

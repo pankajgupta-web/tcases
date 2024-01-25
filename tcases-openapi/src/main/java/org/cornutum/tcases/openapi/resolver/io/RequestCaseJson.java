@@ -266,6 +266,8 @@ public final class RequestCaseJson
             .ifPresent( body -> requestCase.setBody( asMessageData( context, body)));
           });
 
+        System.out.println( "****************** 8. jsonBody ["+requestCase.getBody().toString()+"]");
+
         context.doFor( AUTH, () -> {
           Optional.ofNullable( json.getJsonArray( AUTH))
             .map( array -> array.getValuesAs( JsonObject.class))

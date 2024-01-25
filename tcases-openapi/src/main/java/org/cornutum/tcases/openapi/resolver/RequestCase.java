@@ -7,6 +7,7 @@
 
 package org.cornutum.tcases.openapi.resolver;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.cornutum.tcases.openapi.OpenApiUtils;
 import org.cornutum.tcases.resolve.ArrayValue;
 import org.cornutum.tcases.resolve.BinaryValue;
@@ -257,6 +258,19 @@ public class RequestCase implements Comparable<RequestCase>
     return invalidInput_;
     }
 
+  public void setExpectedResponse( ObjectNode expectedResponse)
+    {
+      expectedResponse_ = expectedResponse;
+    }
+
+    /**
+     * Returns the description of the invalid input for this request. Returns null for a valid request.
+     */
+  public ObjectNode getExpectedResponse()
+    {
+      return expectedResponse_;
+    }
+
   /**
    * Returns true for a request with an invalid input.
    */
@@ -279,6 +293,19 @@ public class RequestCase implements Comparable<RequestCase>
   public boolean isAuthFailure()
     {
     return authFailure_;
+    }
+
+  public void setfunctionalCase( boolean functionalCase)
+    {
+      functionalCase_ = functionalCase;
+    }
+
+    /**
+     * Returns if this request is not functional case from external file.
+     */
+  public boolean isFunctionalCase()
+    {
+      return functionalCase_;
     }
 
   @Override
@@ -346,6 +373,10 @@ public class RequestCase implements Comparable<RequestCase>
   private List<AuthDef> authDefs_;
   private String invalidInput_;
   private boolean authFailure_;
+
+  private boolean functionalCase_;
+
+  private ObjectNode expectedResponse_;
   
 
   /**

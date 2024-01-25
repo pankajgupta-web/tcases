@@ -112,6 +112,15 @@ public class Tcases
     resolver.resolve( f -> functionGen.getTests( f, functionBase))
       .forEach( testCase -> functionTestDef.addTestCase( testCase));
 
+    //Log to get testcases details
+    /*Iterator<TestCase> functionTestDefItr=functionTestDef.getTestCases();
+    while(functionTestDefItr.hasNext()){
+      {
+        System.out.println( "****************** 7. FunctionTestDef Name ["+functionTestDefItr.next().getName()+"]");
+      }
+
+    }*/
+
     annotateTests( resolver.getInputDef(), functionTestDef);
 
     return functionTestDef;
