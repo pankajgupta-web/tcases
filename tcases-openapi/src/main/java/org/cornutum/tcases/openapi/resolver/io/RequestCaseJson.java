@@ -266,8 +266,6 @@ public final class RequestCaseJson
             .ifPresent( body -> requestCase.setBody( asMessageData( context, body)));
           });
 
-        System.out.println( "****************** 8. jsonBody ["+requestCase.getBody().toString()+"]");
-
         context.doFor( AUTH, () -> {
           Optional.ofNullable( json.getJsonArray( AUTH))
             .map( array -> array.getValuesAs( JsonObject.class))
@@ -300,7 +298,7 @@ public final class RequestCaseJson
   /**
    * Returns the MessageData represented by the given JSON object.
    */
-  private static MessageData asMessageData( RequestCaseContext context, JsonObject json)
+  public static MessageData asMessageData( RequestCaseContext context, JsonObject json)
     {
     String mediaType = context.resultFor( MEDIA_TYPE, () -> json.getString( MEDIA_TYPE, null));
     boolean valid = context.resultFor( VALID, () -> json.getBoolean( VALID));

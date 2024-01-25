@@ -8,17 +8,23 @@
 package org.cornutum.tcases.openapi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.NullNode;
+import org.checkerframework.common.value.qual.StringVal;
 import org.cornutum.tcases.HelpException;
 import org.cornutum.tcases.SystemInputDef;
 import org.cornutum.tcases.Tcases;
+import org.cornutum.tcases.io.SystemInputJson;
 import org.cornutum.tcases.openapi.io.TcasesOpenApiIO;
 import org.cornutum.tcases.openapi.moco.MocoServerTestWriter;
 import org.cornutum.tcases.openapi.moco.MocoTestConfigReader;
 import org.cornutum.tcases.openapi.resolver.*;
+import org.cornutum.tcases.openapi.resolver.io.RequestCaseJson;
 import org.cornutum.tcases.openapi.restassured.RestAssuredTestCaseWriter;
 import org.cornutum.tcases.openapi.test.RequestsDef;
 import org.cornutum.tcases.openapi.testwriter.*;
+import org.cornutum.tcases.resolve.DataValue;
 import org.cornutum.tcases.resolve.ResolverContext;
+import org.cornutum.tcases.resolve.StringValue;
 import org.cornutum.tcases.util.Notifier;
 
 import static java.util.Comparator.comparing;
@@ -35,12 +41,7 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static java.util.Collections.singleton;
@@ -1868,17 +1869,17 @@ public class ApiTestCommand
       //Setting Functional TestCase into requestCase and adding it into testDefinitions
       if(options.getApiReqResDef().exists()) {
         requestsDef.getRoots().get("requests").forEach(
-                jsonNode -> {
+                reqNode -> {
                   RequestCase requestCase = new RequestCase(((RequestCase) testDef.getRequestCases().stream().max(comparing(RequestCase::getId)).get()).getId() + 1);
-                  requestCase.setPath(jsonNode.get("url").asText());
+                  requestCase.setPath(reqNode.get("url").asText());
                   //requestCase.setBody(Optional.ofNullable(jsonNode.get("method").asText().toUpperCase()).orElse("test"));
-                  requestCase.setName(jsonNode.get("id").asText());
-                  requestCase.setName(jsonNode.get("id").asText());
+                  requestCase.setName(reqNode.get("id").asText());
+                  requestCase.setName(reqNode.get("id").asText());
                   requestCase.setfunctionalCase(true);
-                  requestCase.setExpectedResponse(jsonNode.get("response").deepCopy());
+                  requestCase.setExpectedResponse(reqNode.get("response").deepCopy());
 
                   requestCase.setOperation(
-                          Optional.ofNullable(jsonNode.get("method").asText().toUpperCase())
+                          Optional.ofNullable(reqNode.get("method").asText().toUpperCase())
                                   .orElseThrow( () -> new RequestCaseException( "No Method defined in Functional Requests")));
 
                   requestCase.setServer(
@@ -1902,7 +1903,40 @@ public class ApiTestCommand
                   requestCase.setApi(Optional.ofNullable( inputDef.getAnnotation( "title"))
                           .orElseThrow( () -> new RequestCaseException( "No title annotation defined")));
 
-                  Integer responseStatusCode=jsonNode.get("response").get("status_code").asInt();
+                  Integer responseStatusCode=reqNode.get("response").get("status_code").asInt();
+
+
+                  if(reqNode.get("query_params") != null){
+                    reqNode.get("query_params").fieldNames().forEachRemaining(queryParam ->
+                    {
+                      StringValue dataValue = new StringValue(reqNode.get("query_params").get(queryParam).asText(), null);
+                      ParamData paramData = new ParamData(queryParam,new MessageData(dataValue,null, true));
+                      paramData.setLocation(ParamDef.Location.QUERY);
+                      paramData.setStyle("simple");
+                      requestCase.addParam(paramData);
+                    });
+                  }
+
+                  if(reqNode.get("path_params") != null){
+                    reqNode.get("path_params").fieldNames().forEachRemaining(queryParam ->
+                    {
+                      StringValue dataValue = new StringValue(reqNode.get("path_params").get(queryParam).asText(), null);
+                      ParamData paramData = new ParamData(queryParam,new MessageData(dataValue,null, true));
+                      paramData.setLocation(ParamDef.Location.PATH);
+                      paramData.setStyle("simple");
+                      requestCase.addParam(paramData);
+                    });
+                  }
+
+                //Fix me
+                 /* if(reqNode.get("method").asText().toUpperCase().equals("PUT") || reqNode.get("method").asText().toUpperCase().equals("POST")){
+                    RequestCaseContext context = new RequestCaseContext();
+                    requestCase.setBody(RequestCaseJson.asMessageData(context, reqNode.get("body").deepCopy()));
+                  }*/
+
+                 /* if(paramDatas.size()!=0)
+                    requestCase.setParams(paramDatas);*/
+
                   if(responseStatusCode >= 400 && responseStatusCode <= 500) {
                       requestCase.setInvalidInput("ERROR STATUS");
                       if(responseStatusCode == 401) {
