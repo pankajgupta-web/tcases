@@ -35,10 +35,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.InputStream;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.*;
@@ -1931,13 +1931,14 @@ public class ApiTestCommand
                 //Fix me
                  /* if(reqNode.get("method").asText().toUpperCase().equals("PUT") || reqNode.get("method").asText().toUpperCase().equals("POST")){
                     RequestCaseContext context = new RequestCaseContext();
-                    requestCase.setBody(RequestCaseJson.asMessageData(context, reqNode.get("body").deepCopy()));
+                    JsonObject jsonObject = (Json.createReader(new StringReader(reqNode.get("body").toString()))).readObject();
+                    Map<String, Object> map_=new LinkedHashMap<>();
+                    map_.put("valid",true);
+                    map_.put("data",jsonObject);
+                    requestCase.setBody(RequestCaseJson.asMessageData(context,(Json.createReader(new StringReader(map_.toString()))).readObject()));
                   }*/
 
-                 /* if(paramDatas.size()!=0)
-                    requestCase.setParams(paramDatas);*/
-
-                  if(responseStatusCode >= 400 && responseStatusCode <= 500) {
+                  if (responseStatusCode >= 400 && responseStatusCode <= 500) {
                       requestCase.setInvalidInput("ERROR STATUS");
                       if(responseStatusCode == 401) {
                         requestCase.setInvalidInput("UNAUTHORIZED");
@@ -1945,6 +1946,8 @@ public class ApiTestCommand
                       }
                   }
 
+                  requestCase.addAuthDef(new HttpBasicDef());
+                  requestCase.addAuthDef(new ApiKeyDef(ParamDef.Location.HEADER, "ApiKey"));
                   testDef.add(requestCase);
                 });
       }
