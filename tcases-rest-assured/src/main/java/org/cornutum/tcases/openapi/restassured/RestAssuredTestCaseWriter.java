@@ -7,6 +7,7 @@
 
 package org.cornutum.tcases.openapi.restassured;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.cornutum.tcases.io.IndentedWriter;
 import org.cornutum.tcases.openapi.resolver.AuthDef;
 import org.cornutum.tcases.openapi.resolver.EncodingData;
@@ -363,46 +364,50 @@ public class RestAssuredTestCaseWriter extends BaseTestCaseWriter
    */
   protected void writeBody( String testName, RequestCase requestCase, IndentedWriter targetWriter)
     { //Here Body data is being set based on content type
-    Optional.ofNullable( requestCase.getBody())
-      .ifPresent( body -> {
-        Optional.ofNullable( body.getValue())
-          .ifPresent( value -> {
+//Enhancement :- Currently json request is being considered for functional test cases
+  if(requestCase.isFunctionalCaseWithJsonBody()){
+    targetWriter.println(String.format(".contentType( %s)", "\"application/json\""));
+    targetWriter.println(
+            String.format(".request().body( %s)",
+                            stringLiteral(requestCase.getFunctionalRequestBody())));
 
-            MediaRange mediaType = MediaRange.of( body.getMediaType());
-            targetWriter.println( String.format( ".contentType( %s)", stringLiteral( mediaType)));
+  }
+  else {
+    Optional.ofNullable(requestCase.getBody())
+            .ifPresent(body -> {
+              Optional.ofNullable(body.getValue())
+                      .ifPresent(value -> {
 
-            // Write binary value?
-            if( "application/octet-stream".equals( mediaType.base()))
-              {
-              // Yes
-              writeBodyBinary( testName, value, targetWriter);
-              }
+                        MediaRange mediaType = MediaRange.of(body.getMediaType());
+                        targetWriter.println(String.format(".contentType( %s)", stringLiteral(mediaType)));
 
-            // Write form value?
-            else if( "application/x-www-form-urlencoded".equals( mediaType.base()))
-              {
-              writeBodyForm( testName, body, targetWriter);
-              }
+                        // Write binary value?
+                        if ("application/octet-stream".equals(mediaType.base())) {
+                          // Yes
+                          writeBodyBinary(testName, value, targetWriter);
+                        }
 
-            // Write multipart form value?
-            else if( "multipart/form-data".equals( mediaType.base()))
-              {
-              writeBodyMultipart( testName, body, targetWriter);
-              }
+                        // Write form value?
+                        else if ("application/x-www-form-urlencoded".equals(mediaType.base())) {
+                          writeBodyForm(testName, body, targetWriter);
+                        }
 
-            else
-              {
-              // No, serialize body value according to media type
-              targetWriter.println(
-                String.format(
-                  ".request().body( %s)",
-                  stringLiteral(
-                    getConverter( mediaType)
-                    .orElseThrow( () -> new TestWriterException( String.format( "No serializer defined for mediaType=%s", mediaType)))
-                    .convert( value))));
-              }
+                        // Write multipart form value?
+                        else if ("multipart/form-data".equals(mediaType.base())) {
+                          writeBodyMultipart(testName, body, targetWriter);
+                        } else {
+                          // No, serialize body value according to media type
+                          targetWriter.println(
+                                  String.format(
+                                          ".request().body( %s)",
+                                          stringLiteral(
+                                                  getConverter(mediaType)
+                                                          .orElseThrow(() -> new TestWriterException(String.format("No serializer defined for mediaType=%s", mediaType)))
+                                                          .convert(value))));
+                        }
+                      });
             });
-        });
+      }
     }
   
   /**

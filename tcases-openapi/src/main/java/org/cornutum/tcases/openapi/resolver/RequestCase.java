@@ -195,6 +195,22 @@ public class RequestCase implements Comparable<RequestCase>
     params_.add( DataValueChars.allowed( param));
     }
 
+    /**
+     * Changes the definition of the request body.
+     */
+    public void setFunctionalRequestBody( String functionalRequestBody)
+    {
+      functionalRequestBody_ = functionalRequestBody;
+    }
+
+    /**
+     * Returns the definition of the request body.
+     */
+    public String getFunctionalRequestBody()
+    {
+      return functionalRequestBody_;
+    }
+
   /**
    * Changes the definition of the request body.
    */
@@ -308,7 +324,20 @@ public class RequestCase implements Comparable<RequestCase>
       return functionalCase_;
     }
 
-  @Override
+  public void setFunctionalCaseWithJsonBody( boolean functionalCaseWithJsonBody)
+  {
+    functionalCaseWithJsonBody_ = functionalCaseWithJsonBody;
+  }
+
+  /**
+   * Returns if this request is not functional case from external file.
+   */
+  public boolean isFunctionalCaseWithJsonBody()
+    {
+      return functionalCaseWithJsonBody_;
+    }
+
+    @Override
   public int compareTo( RequestCase other)
     {
     return
@@ -370,12 +399,14 @@ public class RequestCase implements Comparable<RequestCase>
   private String op_;
   private List<ParamData> params_;
   private MessageData body_;
+  private String functionalRequestBody_;
   private List<AuthDef> authDefs_;
   private String invalidInput_;
   private boolean authFailure_;
 
   private boolean functionalCase_;
 
+  private boolean functionalCaseWithJsonBody_;
   private ObjectNode expectedResponse_;
   
 

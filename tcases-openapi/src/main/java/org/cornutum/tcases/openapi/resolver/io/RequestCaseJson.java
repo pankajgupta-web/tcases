@@ -298,7 +298,7 @@ public final class RequestCaseJson
   /**
    * Returns the MessageData represented by the given JSON object.
    */
-  public static MessageData asMessageData( RequestCaseContext context, JsonObject json)
+  private static MessageData asMessageData( RequestCaseContext context, JsonObject json)
     {
     String mediaType = context.resultFor( MEDIA_TYPE, () -> json.getString( MEDIA_TYPE, null));
     boolean valid = context.resultFor( VALID, () -> json.getBoolean( VALID));

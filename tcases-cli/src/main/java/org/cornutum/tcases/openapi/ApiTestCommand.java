@@ -1863,6 +1863,7 @@ public class ApiTestCommand
       // Generate API request test cases
       RequestTestDef testDef = RequestCases.getRequestCases( Tcases.getTests( inputDef, null, null), options.getResolverContext());
 
+      //Enhancement :- may need to be enhanced for large files
       //To get functional testCases from external file
       RequestsDef requestsDef=new RequestsDef(org.cornutum.tcases.openapi.test.JsonUtils.readJson(new FileReader(options.getApiReqResDef())).deepCopy());
 
@@ -1872,8 +1873,6 @@ public class ApiTestCommand
                 reqNode -> {
                   RequestCase requestCase = new RequestCase(((RequestCase) testDef.getRequestCases().stream().max(comparing(RequestCase::getId)).get()).getId() + 1);
                   requestCase.setPath(reqNode.get("url").asText());
-                  //requestCase.setBody(Optional.ofNullable(jsonNode.get("method").asText().toUpperCase()).orElse("test"));
-                  requestCase.setName(reqNode.get("id").asText());
                   requestCase.setName(reqNode.get("id").asText());
                   requestCase.setfunctionalCase(true);
                   requestCase.setExpectedResponse(reqNode.get("response").deepCopy());
@@ -1928,15 +1927,22 @@ public class ApiTestCommand
                     });
                   }
 
-                //Fix me
-                 /* if(reqNode.get("method").asText().toUpperCase().equals("PUT") || reqNode.get("method").asText().toUpperCase().equals("POST")){
-                    RequestCaseContext context = new RequestCaseContext();
-                    JsonObject jsonObject = (Json.createReader(new StringReader(reqNode.get("body").toString()))).readObject();
-                    Map<String, Object> map_=new LinkedHashMap<>();
-                    map_.put("valid",true);
-                    map_.put("data",jsonObject);
-                    requestCase.setBody(RequestCaseJson.asMessageData(context,(Json.createReader(new StringReader(map_.toString()))).readObject()));
-                  }*/
+                //Enhancement :- Below functionality can be enhanced to compare Request Body sample (functional test case file) with request body definition (openapi) for corr. request url
+                  if(reqNode.get("method").asText().toUpperCase().equals("PUT") || reqNode.get("method").asText().toUpperCase().equals("POST")){
+                    requestCase.setFunctionalCaseWithJsonBody(true);
+                    requestCase.setFunctionalRequestBody(reqNode.get("body").toString());
+                    /*RequestCaseContext context = new RequestCaseContext();
+                    //JsonObject jsonObject = (Json.createReader(new StringReader(reqNode.get("body").toString()))).readObject();
+                    //(Json.createReader(new StringReader(new ObjectMapper().writeValueAsString(map_)))).readObject()
+                    String s1="{\"data\":{\"value\":"+reqNode.get("body").toString()+",\"type\":\"object\"},\"valid\":true}";
+                    JsonObject jsonObject1 = (Json.createReader(new StringReader(s1))).readObject();
+                   // jsonObject1.put("data",jsonObject);
+                    try {
+                      requestCase.setBody(RequestCaseJson.asMessageData(context,jsonObject1));
+                    }catch(Exception exception){
+                      exception.printStackTrace();
+                    }*/
+                  }
 
                   if (responseStatusCode >= 400 && responseStatusCode <= 500) {
                       requestCase.setInvalidInput("ERROR STATUS");
@@ -1946,6 +1952,7 @@ public class ApiTestCommand
                       }
                   }
 
+                  //Enhancement :- Condition to be checked from openapi for security addition
                   requestCase.addAuthDef(new HttpBasicDef());
                   requestCase.addAuthDef(new ApiKeyDef(ParamDef.Location.HEADER, "ApiKey"));
                   testDef.add(requestCase);
