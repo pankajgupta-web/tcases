@@ -64,8 +64,6 @@ public class RequestTestDefReader implements Closeable
         throw new RequestCaseException( "Invalid request case definition", e);
         }
 
-      //System.out.println( "****************** 11. requestCaseJson  ["+json+"]");
-
       return new RequestTestDef( RequestCaseJson.asRequestCases( json));
       }
     }

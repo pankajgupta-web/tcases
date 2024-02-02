@@ -14,6 +14,7 @@ import org.cornutum.tcases.openapi.resolver.EncodingData;
 import org.cornutum.tcases.openapi.resolver.MessageData;
 import org.cornutum.tcases.openapi.resolver.ParamData;
 import org.cornutum.tcases.openapi.resolver.RequestCase;
+import org.cornutum.tcases.openapi.test.Constants;
 import org.cornutum.tcases.openapi.test.MediaRange;
 import org.cornutum.tcases.openapi.testwriter.TestWriterException;
 import org.cornutum.tcases.openapi.testwriter.BaseTestCaseWriter;
@@ -96,7 +97,6 @@ public class RestAssuredTestCaseWriter extends BaseTestCaseWriter
     {
     try
       {
-        //System.out.println( "****************** 12. TestCaseName ["+requestCase.getName()+"]");
       if( getDepends().validateResponses())
         {
         targetWriter.println( "Response response =");
@@ -156,7 +156,7 @@ public class RestAssuredTestCaseWriter extends BaseTestCaseWriter
                           "responseValidator.assertWithExpectedResponse( %s, %s, response.statusCode(), response.getContentType(), response.asString(), %s);",
                           stringLiteral( requestCase.getOperation().toUpperCase()),
                           stringLiteral( requestCase.getPath()),
-                          stringLiteral(requestCase.getExpectedResponse().get("body"))));
+                          stringLiteral(requestCase.getExpectedResponse().get(Constants.RESPONSE_BODY_TAG))));
            }
 
         }
@@ -364,7 +364,7 @@ public class RestAssuredTestCaseWriter extends BaseTestCaseWriter
    */
   protected void writeBody( String testName, RequestCase requestCase, IndentedWriter targetWriter)
     { //Here Body data is being set based on content type
-//Enhancement :- Currently json request is being considered for functional test cases
+//To Do :- Currently json request is being considered for functional test cases
   if(requestCase.isFunctionalCaseWithJsonBody()){
     targetWriter.println(String.format(".contentType( %s)", "\"application/json\""));
     targetWriter.println(

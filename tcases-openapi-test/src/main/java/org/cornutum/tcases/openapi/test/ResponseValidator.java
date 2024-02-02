@@ -260,11 +260,17 @@ public class ResponseValidator
       }
     }
 
-    public void assertWithExpectedResponse( String op, String path, int statusCode, String contentType, String content, String expectedResponse)
-            throws JsonProcessingException {
-      ObjectMapper mapper = new ObjectMapper();
-      if(!mapper.readTree(expectedResponse).equals(mapper.readTree(content))){
-        throw new ResponseValidationException( op, path, statusCode, "body", "Response is not equal", null);
+    /*
+    * To assert incoming response with expected response from functional test case file
+    * */
+    public void assertWithExpectedResponse( String op, String path, int statusCode, String contentType, String content, String expectedResponse) {
+      try {
+        ObjectMapper mapper = new ObjectMapper();
+        if (!mapper.readTree(expectedResponse).equals(mapper.readTree(content))) {
+          throw new ResponseValidationException(op, path, statusCode, "body", "Response is not equal", null);
+        }
+      }catch(JsonProcessingException exception){
+        throw new ResponseValidationException(op, path, statusCode, "body", "Invalid Response", null);
       }
     }
   /**

@@ -110,8 +110,6 @@ public class RequestCaseDefiner
           .map( this::toBodyDef)
           .orElse( null));
 
-        //System.out.println( "****************** 9. testCase Name ["+testCase+"]");
-
         authProperties( testCase)
           .forEach( authProperties -> requestCaseDef.addAuthDef( toAuthDef( authProperties)));
         }

@@ -18,6 +18,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.DirectoryScanner;
+import org.cornutum.tcases.openapi.test.Constants;
 import org.cornutum.tcases.openapi.test.RequestsDef;
 
 import static org.apache.commons.io.FilenameUtils.getPath;
@@ -81,15 +82,16 @@ public class ApiTestMojo extends AbstractMojo
         String inputFile = apiDefs[i];
         File apiDef = new File( inputRootDir, inputFile);
 
-        // file with req-res suffix (suffix can be changed later)the similar name as that of open file . "req-res.json" will be assigned to java static constant
-        String inputReqResFile = apiDefs[i].replaceFirst("[.][^.]+$", "").concat("-req-res.json");
-        File apiReqResDef = new File(inputRootDir, inputReqResFile);
+        // file with req-res suffix (suffix can be changed through Constants.FUNCTIONAL_TEST_FILE_NAME_SUFFIX) to the similar name as that of open file .
+        String inputReqResFile = apiDefs[i].replaceFirst("[.][^.]+$", "").concat(Constants.FUNCTIONAL_TEST_FILE_NAME_SUFFIX);
+        File functionalTestDef = new File(inputRootDir, inputReqResFile);
 
         // Set generator options for this API definition.
         Options options = new Options();
         options.setApiDef( apiDef);
-        if(apiReqResDef.exists())
-          options.setApiReqResDef(apiReqResDef);
+        //Setting path of functional test file
+        if(functionalTestDef.exists())
+          options.setFunctionalTestDef(functionalTestDef);
         options.setSource( getSource());
         options.setTestType( getTestType());
         options.setExecType( getExecType());

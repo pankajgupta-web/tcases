@@ -20,6 +20,7 @@ import org.cornutum.tcases.openapi.moco.MocoTestConfigReader;
 import org.cornutum.tcases.openapi.resolver.*;
 import org.cornutum.tcases.openapi.resolver.io.RequestCaseJson;
 import org.cornutum.tcases.openapi.restassured.RestAssuredTestCaseWriter;
+import org.cornutum.tcases.openapi.test.Constants;
 import org.cornutum.tcases.openapi.test.RequestsDef;
 import org.cornutum.tcases.openapi.testwriter.*;
 import org.cornutum.tcases.resolve.DataValue;
@@ -1368,9 +1369,9 @@ public class ApiTestCommand
       {
       apiDef_ = apiDef;
       }
-    public void setApiReqResDef( File apiReqResDef)
+    public void setFunctionalTestDef( File functionalTestDef)
       {
-        apiReqResDef_ = apiReqResDef;
+        functionalTestDef_ = functionalTestDef;
       }
     /**
      * Returns the Open API v3 API definition file
@@ -1380,9 +1381,9 @@ public class ApiTestCommand
       return apiDef_;
       }
 
-    public File getApiReqResDef()
+    public File getFunctionalTestDef()
       {
-        return apiReqResDef_;
+        return functionalTestDef_;
       }
     /**
      * Changes the current working directory used to complete relative path names.
@@ -1594,7 +1595,7 @@ public class ApiTestCommand
 
     private File apiDef_;
 
-    private File apiReqResDef_;
+    private File functionalTestDef_;
     private TestType testType_;
     private ExecType execType_;
     private String testName_;
@@ -1863,22 +1864,21 @@ public class ApiTestCommand
       // Generate API request test cases
       RequestTestDef testDef = RequestCases.getRequestCases( Tcases.getTests( inputDef, null, null), options.getResolverContext());
 
-      //Enhancement :- may need to be enhanced for large files
-      //To get functional testCases from external file
-      RequestsDef requestsDef=new RequestsDef(org.cornutum.tcases.openapi.test.JsonUtils.readJson(new FileReader(options.getApiReqResDef())).deepCopy());
-
       //Setting Functional TestCase into requestCase and adding it into testDefinitions
-      if(options.getApiReqResDef().exists()) {
-        requestsDef.getRoots().get("requests").forEach(
+      if(options.getFunctionalTestDef() != null) {
+        //To Do :- may need to be enhanced for large files
+        //To get functional testCases from external file
+        RequestsDef requestsDef=new RequestsDef(org.cornutum.tcases.openapi.test.JsonUtils.readJson(new FileReader(options.getFunctionalTestDef())).deepCopy());
+        requestsDef.getRoots().get(Constants.PARENT_REQUEST_TAG).forEach(
                 reqNode -> {
                   RequestCase requestCase = new RequestCase(((RequestCase) testDef.getRequestCases().stream().max(comparing(RequestCase::getId)).get()).getId() + 1);
-                  requestCase.setPath(reqNode.get("url").asText());
-                  requestCase.setName(reqNode.get("id").asText());
+                  requestCase.setPath(reqNode.get(Constants.REQUEST_PATH_TAG).asText());
+                  requestCase.setName(reqNode.get(Constants.REQUEST_ID_TAG).asText());
                   requestCase.setfunctionalCase(true);
-                  requestCase.setExpectedResponse(reqNode.get("response").deepCopy());
+                  requestCase.setExpectedResponse(reqNode.get(Constants.RESPONSE_TAG).deepCopy());
 
                   requestCase.setOperation(
-                          Optional.ofNullable(reqNode.get("method").asText().toUpperCase())
+                          Optional.ofNullable(reqNode.get(Constants.REQUEST_OPERATION_TAG).asText().toUpperCase())
                                   .orElseThrow( () -> new RequestCaseException( "No Method defined in Functional Requests")));
 
                   requestCase.setServer(
@@ -1902,13 +1902,13 @@ public class ApiTestCommand
                   requestCase.setApi(Optional.ofNullable( inputDef.getAnnotation( "title"))
                           .orElseThrow( () -> new RequestCaseException( "No title annotation defined")));
 
-                  Integer responseStatusCode=reqNode.get("response").get("status_code").asInt();
+                  Integer responseStatusCode=reqNode.get(Constants.RESPONSE_TAG).get(Constants.RESPONSE_STATUS_CODE_TAG).asInt();
 
 
-                  if(reqNode.get("query_params") != null){
-                    reqNode.get("query_params").fieldNames().forEachRemaining(queryParam ->
+                  if(!(reqNode.get(Constants.REQUEST_QUERY_PARAMS_TAG) instanceof NullNode || (reqNode.get(Constants.REQUEST_QUERY_PARAMS_TAG) == null))) {
+                    reqNode.get(Constants.REQUEST_QUERY_PARAMS_TAG).fieldNames().forEachRemaining(queryParam ->
                     {
-                      StringValue dataValue = new StringValue(reqNode.get("query_params").get(queryParam).asText(), null);
+                      StringValue dataValue = new StringValue(reqNode.get(Constants.REQUEST_QUERY_PARAMS_TAG).get(queryParam).asText(), null);
                       ParamData paramData = new ParamData(queryParam,new MessageData(dataValue,null, true));
                       paramData.setLocation(ParamDef.Location.QUERY);
                       paramData.setStyle("simple");
@@ -1916,10 +1916,10 @@ public class ApiTestCommand
                     });
                   }
 
-                  if(reqNode.get("path_params") != null){
-                    reqNode.get("path_params").fieldNames().forEachRemaining(queryParam ->
+                  if(!(reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG) instanceof NullNode || (reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG) == null))){
+                    reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG).fieldNames().forEachRemaining(queryParam ->
                     {
-                      StringValue dataValue = new StringValue(reqNode.get("path_params").get(queryParam).asText(), null);
+                      StringValue dataValue = new StringValue(reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG).get(queryParam).asText(), null);
                       ParamData paramData = new ParamData(queryParam,new MessageData(dataValue,null, true));
                       paramData.setLocation(ParamDef.Location.PATH);
                       paramData.setStyle("simple");
@@ -1927,42 +1927,28 @@ public class ApiTestCommand
                     });
                   }
 
-                //Enhancement :- Below functionality can be enhanced to compare Request Body sample (functional test case file) with request body definition (openapi) for corr. request url
-                  if(reqNode.get("method").asText().toUpperCase().equals("PUT") || reqNode.get("method").asText().toUpperCase().equals("POST")){
+                //To Do :- Below functionality can be enhanced to compare Request Body sample (functional test case file) with request body definition (openapi) for corr. request url
+                  if(!(reqNode.get(Constants.REQUEST_BODY_TAG) instanceof NullNode || (reqNode.get(Constants.REQUEST_BODY_TAG) == null))){
                     requestCase.setFunctionalCaseWithJsonBody(true);
-                    requestCase.setFunctionalRequestBody(reqNode.get("body").toString());
-                    /*RequestCaseContext context = new RequestCaseContext();
-                    //JsonObject jsonObject = (Json.createReader(new StringReader(reqNode.get("body").toString()))).readObject();
-                    //(Json.createReader(new StringReader(new ObjectMapper().writeValueAsString(map_)))).readObject()
-                    String s1="{\"data\":{\"value\":"+reqNode.get("body").toString()+",\"type\":\"object\"},\"valid\":true}";
-                    JsonObject jsonObject1 = (Json.createReader(new StringReader(s1))).readObject();
-                   // jsonObject1.put("data",jsonObject);
-                    try {
-                      requestCase.setBody(RequestCaseJson.asMessageData(context,jsonObject1));
-                    }catch(Exception exception){
-                      exception.printStackTrace();
-                    }*/
+                    requestCase.setFunctionalRequestBody(reqNode.get(Constants.REQUEST_BODY_TAG).toString());
                   }
 
                   if (responseStatusCode >= 400 && responseStatusCode <= 500) {
-                      requestCase.setInvalidInput("ERROR STATUS");
+                      requestCase.setInvalidInput(Constants.ERROR_STATUS);
                       if(responseStatusCode == 401) {
-                        requestCase.setInvalidInput("UNAUTHORIZED");
+                        requestCase.setInvalidInput(Constants.UNAUTHORIZED);
                         requestCase.setAuthFailure(true);
                       }
                   }
 
-                  //Enhancement :- Condition to be checked from openapi for security addition
+                  //To Do :- Condition to be checked from openapi for security addition
+                  //Setting Authentication parameters
                   requestCase.addAuthDef(new HttpBasicDef());
                   requestCase.addAuthDef(new ApiKeyDef(ParamDef.Location.HEADER, "ApiKey"));
                   testDef.add(requestCase);
                 });
       }
-      //Uncomment To compare Json Strings
-      /*String s1= "{\"employee\":{\"id\":\"1212\",\"fullName\":\"John Miles\",\"age\":34,\"contact\":{\"email\":\"john@xyz.com\",\"phone\":\"9999999999\"},\"skills\": [\"Python\", \"C++\", \"Java\"] }}";
-        String s2="{\"employee\":{\"skills\": [\"Python\", \"C++\", \"Java\"],\"contact\":{\"phone\":\"9999999999\",\"email\":\"john@xyz.com\"},\"fullName\":\"John Miles\",\"id\":\"1212\",\"age\":34}}"; ObjectMapper mapper = new ObjectMapper();
-        boolean areTheyEqual = mapper.readTree(s1).equals(mapper.readTree(s2));
-        */
+
       // Write API tests for realized request cases only
       TestSource testSource = options.getTestSource( RequestCases.realizeRequestCases( testDef));
       if( apiDefFile != null && options.hasResources())
