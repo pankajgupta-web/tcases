@@ -1943,7 +1943,7 @@ public class ApiTestCommand
 
                   //To Do :- Condition to be checked from openapi for security addition
                   //Setting Authentication parameters
-                  requestCase.addAuthDef(new HttpBasicDef());
+                  requestCase.addAuthDef(new HttpBearerDef());
                   requestCase.addAuthDef(new ApiKeyDef(ParamDef.Location.HEADER, "ApiKey"));
                   testDef.add(requestCase);
                 });
