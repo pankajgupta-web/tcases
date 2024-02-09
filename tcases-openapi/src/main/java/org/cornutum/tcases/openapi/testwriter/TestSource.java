@@ -146,10 +146,7 @@ public class TestSource
 
   public RequestsDef getRequests()
     {
-      return
-              Optional.ofNullable( requests_)
-                      .map( requests_ -> requests_.forPaths( getPaths()).forOps( getOperations()))
-                      .orElse( null);
+      return requests_;
     }
   @Override
   public String toString()

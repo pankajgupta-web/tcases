@@ -7,20 +7,29 @@
 
 package org.cornutum.tcases.openapi.testwriter;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.cornutum.tcases.io.IndentedWriter;
 import org.cornutum.tcases.openapi.resolver.RequestCase;
+import org.cornutum.tcases.openapi.test.Constants;
+import org.cornutum.tcases.openapi.test.RequestsDef;
 import org.cornutum.tcases.openapi.test.ResponsesDef;
+import org.cornutum.tcases.openapi.testwriter.java.TestCaseWriterUtils;
 import org.cornutum.tcases.util.ToString;
 
 import static org.apache.commons.io.FilenameUtils.getBaseName;
 import static org.apache.commons.io.IOUtils.closeQuietly;
+import static org.cornutum.tcases.openapi.test.JsonUtils.mapper;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -74,6 +83,11 @@ public abstract class TestWriter<S extends TestSource, T extends TestTarget>
       targetWriter.setIndent( 4);
 
       prepareTestCases( source.getRequestCases());
+
+      if(source.getRequests() != null){
+        TestCaseWriterUtils.setFunctionalTestCasesPresent(true);
+      }
+
       writeProlog( target, testName, targetWriter);
       writeTestCases( target, testName, source.getRequestCases(), targetWriter);
       writeEpilog( target, testName, targetWriter);
@@ -94,6 +108,9 @@ public abstract class TestWriter<S extends TestSource, T extends TestTarget>
 
     Optional.ofNullable( source.getResponses())
       .ifPresent( responses -> writeResponsesDef( responses, targetFile, getTestResourceDir( targetFile, target.getResourceDir())));
+
+      Optional.ofNullable( source.getRequests())
+              .ifPresent( requests -> writeExpectedResponses( requests, targetFile, getTestResourceDir( targetFile, target.getResourceDir())));
     }
 
   /**
@@ -272,6 +289,42 @@ public abstract class TestWriter<S extends TestSource, T extends TestTarget>
       catch( Exception e)
         {
         throw new TestWriterException( String.format( "Can't write responses definition to resourceFile=%s", resourceFile), e);
+        }
+      }
+    }
+
+    protected void writeExpectedResponses(RequestsDef requests, File targetFile, File resourceDir)
+    {
+      if( resourceDir != null)
+      {
+        if( !(resourceDir.exists() || resourceDir.mkdirs()))
+        {
+          throw new TestWriterException( String.format( "Can't create resourceDir=%s", resourceDir));
+        }
+
+        File resourceFile = new File( resourceDir, String.format( "%s-ExpectedResponses.json", getBaseName( targetFile.getName())));
+
+        try( OutputStreamWriter writer = new OutputStreamWriter( new FileOutputStream( resourceFile), "UTF-8"))
+        {
+          //RequestsDef.write( requests, writer);
+          try( JsonGenerator generator = mapper().writerWithDefaultPrettyPrinter().createGenerator( writer))
+          {
+            Map<String, JsonNode> expectedResponses=new LinkedHashMap<>();
+            requests.getRoots().get(Constants.PARENT_REQUEST_TAG).forEach(
+                    reqNode -> {
+                      expectedResponses.put(reqNode.get(Constants.REQUEST_ID_TAG).asText(),reqNode.get(Constants.RESPONSE_TAG).get(Constants.RESPONSE_BODY_TAG));
+                    });
+            ObjectMapper mapper=new ObjectMapper();
+            mapper().writeTree( generator, mapper.readTree(mapper.writeValueAsString(expectedResponses)));
+          }
+          catch( Exception e)
+          {
+            throw new IllegalStateException( "Can't write JSON document", e);
+          }
+        }
+        catch( Exception e)
+        {
+          throw new TestWriterException( String.format( "Can't write expected responses to resourceFile=%s", resourceFile), e);
         }
       }
     }

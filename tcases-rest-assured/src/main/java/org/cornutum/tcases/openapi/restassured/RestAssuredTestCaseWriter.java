@@ -156,7 +156,7 @@ public class RestAssuredTestCaseWriter extends BaseTestCaseWriter
                           "responseValidator.assertWithExpectedResponse( %s, %s, response.statusCode(), response.getContentType(), response.asString(), %s);",
                           stringLiteral( requestCase.getOperation().toUpperCase()),
                           stringLiteral( requestCase.getPath()),
-                          stringLiteral(requestCase.getExpectedResponse().get(Constants.RESPONSE_BODY_TAG))));
+                          stringLiteral(requestCase.getName())));
            }
 
         }

@@ -28,6 +28,17 @@ import java.util.Optional;
  */
 public final class TestCaseWriterUtils
   {
+
+    private static boolean functionalTestCasesPresent_;
+
+    public static void setFunctionalTestCasesPresent(boolean functionalTestCasesPresent){
+      functionalTestCasesPresent_=functionalTestCasesPresent;
+    }
+
+    public static boolean isFunctionalTestCasesPresent(){
+      return functionalTestCasesPresent_;
+    }
+
   /**
    * Creates a new TestCaseWriterUtils instance.
    */
@@ -41,8 +52,12 @@ public final class TestCaseWriterUtils
    */
   public static void writeResponseValidatorDef( String testName, IndentedWriter targetWriter)
     {
-    targetWriter.println();
-    targetWriter.println( "private ResponseValidator responseValidator = new ResponseValidator( getClass());");
+      targetWriter.println();
+    if(isFunctionalTestCasesPresent()) {
+      targetWriter.println("private ResponseValidator responseValidator = new ResponseValidator( getClass(), true);");
+    }else{
+      targetWriter.println("private ResponseValidator responseValidator = new ResponseValidator( getClass());");
+    }
     }
 
   /**

@@ -14,11 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +36,25 @@ public class ResponseValidator
     {
     this( testClass, String.format( "%s-Responses.json", testClass.getSimpleName()));
     }
-  
+
+   public ResponseValidator( Class<?> testClass, Boolean isFunctionalTestCasesPresent)
+    {
+      this( testClass, String.format( "%s-Responses.json", testClass.getSimpleName()));
+
+      if(isFunctionalTestCasesPresent){
+        try {
+              InputStream expectedResponsesStream = streamFor(testClass, String.format("%s-ExpectedResponses.json", testClass.getSimpleName()));
+              expectedResponses_= Optional.of(readJson(readerFor(expectedResponsesStream)))
+                                  .flatMap(root -> asObject(root))
+                                  .orElseThrow(() -> new IllegalStateException("Expected JSON type=object"));
+        }
+        catch( Exception exception)
+          {
+            throw new IllegalStateException( "Can't read JSON document", exception);
+          }
+      }
+
+    }
   /**
    * Creates a new ResponseValidator using the given {@link ResponsesDef} resource for the given test class.
    */
@@ -263,10 +277,10 @@ public class ResponseValidator
     /*
     * To assert incoming response with expected response from functional test case file
     * */
-    public void assertWithExpectedResponse( String op, String path, int statusCode, String contentType, String content, String expectedResponse) {
+    public void assertWithExpectedResponse( String op, String path, int statusCode, String contentType, String content, String requestCaseId) {
       try {
         ObjectMapper mapper = new ObjectMapper();
-        if (!mapper.readTree(expectedResponse).equals(mapper.readTree(content))) {
+        if (!mapper.readTree(expectedResponses_.get(requestCaseId).toString()).equals(mapper.readTree(content))) {
           throw new ResponseValidationException(op, path, statusCode, "body", "Response is not equal", null);
         }
       }catch(JsonProcessingException exception){
@@ -501,6 +515,8 @@ public class ResponseValidator
     }
 
   private final ResponsesDef responses_;
+
+  private static ObjectNode expectedResponses_ = null;
   private ResponseValidationHandler validationHandler_ = ResponseValidationHandler.EXPECT_CONFORM;
   private boolean writeOnlyInvalid_ = true;
   }

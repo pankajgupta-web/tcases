@@ -1864,89 +1864,103 @@ public class ApiTestCommand
       // Generate API request test cases
       RequestTestDef testDef = RequestCases.getRequestCases( Tcases.getTests( inputDef, null, null), options.getResolverContext());
 
+      RequestsDef requestsDef= null;
+
       //Setting Functional TestCase into requestCase and adding it into testDefinitions
       if(options.getFunctionalTestDef() != null) {
         //To Do :- may need to be enhanced for large files
         //To get functional testCases from external file
-        RequestsDef requestsDef=new RequestsDef(org.cornutum.tcases.openapi.test.JsonUtils.readJson(new FileReader(options.getFunctionalTestDef())).deepCopy());
-        requestsDef.getRoots().get(Constants.PARENT_REQUEST_TAG).forEach(
-                reqNode -> {
-                  RequestCase requestCase = new RequestCase(((RequestCase) testDef.getRequestCases().stream().max(comparing(RequestCase::getId)).get()).getId() + 1);
-                  requestCase.setPath(reqNode.get(Constants.REQUEST_PATH_TAG).asText());
-                  requestCase.setName(reqNode.get(Constants.REQUEST_ID_TAG).asText());
-                  requestCase.setfunctionalCase(true);
-                  requestCase.setExpectedResponse(reqNode.get(Constants.RESPONSE_TAG).deepCopy());
+        if (!(("").equals(org.cornutum.tcases.openapi.test.JsonUtils.readJson(new FileReader(options.getFunctionalTestDef())).toString()))) {
+          requestsDef = new RequestsDef(org.cornutum.tcases.openapi.test.JsonUtils.readJson(new FileReader(options.getFunctionalTestDef())).deepCopy());
+          requestsDef.getRoots().get(Constants.PARENT_REQUEST_TAG).forEach(
+                  reqNode -> {
+                    RequestCase requestCase = new RequestCase(((RequestCase) testDef.getRequestCases().stream().max(comparing(RequestCase::getId)).get()).getId() + 1);
+                    requestCase.setPath(reqNode.get(Constants.REQUEST_PATH_TAG).asText());
+                    requestCase.setName(reqNode.get(Constants.REQUEST_ID_TAG).asText());
+                    requestCase.setfunctionalCase(true);
+                    requestCase.setExpectedResponse(reqNode.get(Constants.RESPONSE_TAG).deepCopy());
 
-                  requestCase.setOperation(
-                          Optional.ofNullable(reqNode.get(Constants.REQUEST_OPERATION_TAG).asText().toUpperCase())
-                                  .orElseThrow( () -> new RequestCaseException( "No Method defined in Functional Requests")));
+                    requestCase.setOperation(
+                            Optional.ofNullable(reqNode.get(Constants.REQUEST_OPERATION_TAG).asText().toUpperCase())
+                                    .orElseThrow(() -> new RequestCaseException("No Method defined in Functional Requests")));
 
-                  requestCase.setServer(
-                          Optional.ofNullable( inputDef.getAnnotation( "server"))
-                                  .map( uri -> {
-                                    try
-                                    {
-                                      return new URI( uri);
-                                    }
-                                    catch( Exception e)
-                                    {
-                                      throw new RequestCaseException( "Can't convert server URI", e);
-                                    }
-                                  })
-                                  .orElse( null));
+                    if (!(reqNode.get(Constants.REQUEST_BASE_URL) instanceof NullNode || (reqNode.get(Constants.REQUEST_BASE_URL) == null))) {
+                      requestCase.setServer(
+                              Optional.ofNullable(reqNode.get(Constants.REQUEST_BASE_URL))
+                                      .map(uri -> {
+                                        try {
+                                          return new URI(reqNode.get(Constants.REQUEST_BASE_URL).asText());
+                                        } catch (Exception e) {
+                                          throw new RequestCaseException("Can't convert server URI", e);
+                                        }
+                                      })
+                                      .orElse(null));
+                    } else {
+                      requestCase.setServer(
+                              Optional.ofNullable(inputDef.getAnnotation("server"))
+                                      .map(uri -> {
+                                        try {
+                                          return new URI(uri);
+                                        } catch (Exception e) {
+                                          throw new RequestCaseException("Can't convert server URI", e);
+                                        }
+                                      })
+                                      .orElse(null));
+                    }
 
-                  requestCase.setVersion(
-                          Optional.ofNullable( inputDef.getAnnotation( "version"))
-                                  .orElseThrow( () -> new RequestCaseException( "No version annotation defined")));
+                    requestCase.setVersion(
+                            Optional.ofNullable(inputDef.getAnnotation("version"))
+                                    .orElseThrow(() -> new RequestCaseException("No version annotation defined")));
 
-                  requestCase.setApi(Optional.ofNullable( inputDef.getAnnotation( "title"))
-                          .orElseThrow( () -> new RequestCaseException( "No title annotation defined")));
+                    requestCase.setApi(Optional.ofNullable(inputDef.getAnnotation("title"))
+                            .orElseThrow(() -> new RequestCaseException("No title annotation defined")));
 
-                  Integer responseStatusCode=reqNode.get(Constants.RESPONSE_TAG).get(Constants.RESPONSE_STATUS_CODE_TAG).asInt();
+                    Integer responseStatusCode = reqNode.get(Constants.RESPONSE_TAG).get(Constants.RESPONSE_STATUS_CODE_TAG).asInt();
 
 
-                  if(!(reqNode.get(Constants.REQUEST_QUERY_PARAMS_TAG) instanceof NullNode || (reqNode.get(Constants.REQUEST_QUERY_PARAMS_TAG) == null))) {
-                    reqNode.get(Constants.REQUEST_QUERY_PARAMS_TAG).fieldNames().forEachRemaining(queryParam ->
-                    {
-                      StringValue dataValue = new StringValue(reqNode.get(Constants.REQUEST_QUERY_PARAMS_TAG).get(queryParam).asText(), null);
-                      ParamData paramData = new ParamData(queryParam,new MessageData(dataValue,null, true));
-                      paramData.setLocation(ParamDef.Location.QUERY);
-                      paramData.setStyle("simple");
-                      requestCase.addParam(paramData);
-                    });
-                  }
+                    if (!(reqNode.get(Constants.REQUEST_QUERY_PARAMS_TAG) instanceof NullNode || (reqNode.get(Constants.REQUEST_QUERY_PARAMS_TAG) == null))) {
+                      reqNode.get(Constants.REQUEST_QUERY_PARAMS_TAG).fieldNames().forEachRemaining(queryParam ->
+                      {
+                        StringValue dataValue = new StringValue(reqNode.get(Constants.REQUEST_QUERY_PARAMS_TAG).get(queryParam).asText(), null);
+                        ParamData paramData = new ParamData(queryParam, new MessageData(dataValue, null, true));
+                        paramData.setLocation(ParamDef.Location.QUERY);
+                        paramData.setStyle("simple");
+                        requestCase.addParam(paramData);
+                      });
+                    }
 
-                  if(!(reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG) instanceof NullNode || (reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG) == null))){
-                    reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG).fieldNames().forEachRemaining(queryParam ->
-                    {
-                      StringValue dataValue = new StringValue(reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG).get(queryParam).asText(), null);
-                      ParamData paramData = new ParamData(queryParam,new MessageData(dataValue,null, true));
-                      paramData.setLocation(ParamDef.Location.PATH);
-                      paramData.setStyle("simple");
-                      requestCase.addParam(paramData);
-                    });
-                  }
+                    if (!(reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG) instanceof NullNode || (reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG) == null))) {
+                      reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG).fieldNames().forEachRemaining(queryParam ->
+                      {
+                        StringValue dataValue = new StringValue(reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG).get(queryParam).asText(), null);
+                        ParamData paramData = new ParamData(queryParam, new MessageData(dataValue, null, true));
+                        paramData.setLocation(ParamDef.Location.PATH);
+                        paramData.setStyle("simple");
+                        requestCase.addParam(paramData);
+                      });
+                    }
 
-                //To Do :- Below functionality can be enhanced to compare Request Body sample (functional test case file) with request body definition (openapi) for corr. request url
-                  if(!(reqNode.get(Constants.REQUEST_BODY_TAG) instanceof NullNode || (reqNode.get(Constants.REQUEST_BODY_TAG) == null))){
-                    requestCase.setFunctionalCaseWithJsonBody(true);
-                    requestCase.setFunctionalRequestBody(reqNode.get(Constants.REQUEST_BODY_TAG).toString());
-                  }
+                    //To Do :- Below functionality can be enhanced to compare Request Body sample (functional test case file) with request body definition (openapi) for corr. request url
+                    if (!(reqNode.get(Constants.REQUEST_BODY_TAG) instanceof NullNode || (reqNode.get(Constants.REQUEST_BODY_TAG) == null))) {
+                      requestCase.setFunctionalCaseWithJsonBody(true);
+                      requestCase.setFunctionalRequestBody(reqNode.get(Constants.REQUEST_BODY_TAG).toString());
+                    }
 
-                  if (responseStatusCode >= 400 && responseStatusCode <= 500) {
+                    if (responseStatusCode >= 400 && responseStatusCode <= 500) {
                       requestCase.setInvalidInput(Constants.ERROR_STATUS);
-                      if(responseStatusCode == 401) {
+                      if (responseStatusCode == 401) {
                         requestCase.setInvalidInput(Constants.UNAUTHORIZED);
                         requestCase.setAuthFailure(true);
                       }
-                  }
+                    }
 
-                  //To Do :- Condition to be checked from openapi for security addition
-                  //Setting Authentication parameters
-                  requestCase.addAuthDef(new HttpBearerDef());
-                  requestCase.addAuthDef(new ApiKeyDef(ParamDef.Location.HEADER, "ApiKey"));
-                  testDef.add(requestCase);
-                });
+                    //To Do :- Condition to be checked from openapi for security addition
+                    //Setting Authentication parameters
+                    requestCase.addAuthDef(new HttpBearerDef());
+                    requestCase.addAuthDef(new ApiKeyDef(ParamDef.Location.HEADER, "ApiKey"));
+                    testDef.add(requestCase);
+                  });
+        }
       }
 
       // Write API tests for realized request cases only
@@ -1955,6 +1969,10 @@ public class ApiTestCommand
         {
         testSource.setResponses( TcasesOpenApiIO.getResponsesDef( apiDefFile, options.getContentType()));
         }
+
+      if(requestsDef != null && options.getFunctionalTestDef() != null){
+        testSource.setRequests(requestsDef);
+      }
 
       TestCaseWriter testCaseWriter = options.getTestCaseWriter();
       TestWriter<?,?> testWriter = options.getTestWriter( testCaseWriter);

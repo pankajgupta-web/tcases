@@ -17,4 +17,5 @@ public class Constants {
     public final static String OPERATION_PUT= "PUT";
     public final static String OPERATION_POST= "POST";
     public final static String OPERATION_GET= "GET";
+    public final static String REQUEST_BASE_URL="base_url";
 }
