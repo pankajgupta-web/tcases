@@ -1930,10 +1930,10 @@ public class ApiTestCommand
                     }
 
                     if (!(reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG) instanceof NullNode || (reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG) == null))) {
-                      reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG).fieldNames().forEachRemaining(queryParam ->
+                      reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG).fieldNames().forEachRemaining(pathParam ->
                       {
-                        StringValue dataValue = new StringValue(reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG).get(queryParam).asText(), null);
-                        ParamData paramData = new ParamData(queryParam, new MessageData(dataValue, null, true));
+                        StringValue dataValue = new StringValue(reqNode.get(Constants.REQUEST_PATH_PARAMS_TAG).get(pathParam).asText(), null);
+                        ParamData paramData = new ParamData(pathParam, new MessageData(dataValue, null, true));
                         paramData.setLocation(ParamDef.Location.PATH);
                         paramData.setStyle("simple");
                         requestCase.addParam(paramData);
@@ -1956,8 +1956,9 @@ public class ApiTestCommand
 
                     //To Do :- Condition to be checked from openapi for security addition
                     //Setting Authentication parameters
-                    requestCase.addAuthDef(new HttpBearerDef());
-                    requestCase.addAuthDef(new ApiKeyDef(ParamDef.Location.HEADER, "ApiKey"));
+                    /*requestCase.addAuthDef(new HttpBearerDef());
+                    requestCase.addAuthDef(new ApiKeyDef(ParamDef.Location.HEADER, "ApiKey"));*/
+                    requestCase.setAuthDefs(testDef.getRequestCases().get(0).getAuthDefs());
                     testDef.add(requestCase);
                   });
         }
