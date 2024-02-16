@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.cornutum.tcases</groupId>
         <artifactId>tcases</artifactId>
-        <version>4.0.3-SNAPSHOT</version>
+        <version>4.0.6-SNAPSHOT</version>
     </parent>
 
     <artifactId>tcases-openapi</artifactId>
@@ -54,7 +54,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.build.date>${maven.build.timestamp}</project.build.date>
         <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
-        <tcases.maven.version>4.0.0</tcases.maven.version>
+        <tcases.maven.version>4.0.5</tcases.maven.version>
     </properties>
 
     <build>
@@ -188,7 +188,7 @@
         <dependency>
             <groupId>io.swagger.parser.v3</groupId>
             <artifactId>swagger-parser</artifactId>
-            <version>2.1.16</version>
+            <version>2.1.20</version>
         </dependency>
         
         <dependency>

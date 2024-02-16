@@ -1,5 +1,50 @@
 # Release Notes #
 
+## 4.0.5 ##
+
+This release provides the following improvements.
+
+  * **ResponseValidator: Rework to handle combined header values** [[293](https://github.com/Cornutum/tcases/issues/293)]
+
+    To validate OpenAPI responses, generated tests now combine all values supplied for each header field name into
+    a single comma-separated list. NOTE: To see the effect of this change, you must regenerate your OpenAPI tests.
+    
+  * **Speed up handling of numeric schemas with extremely large ranges**
+
+    When a numeric schema specifies both `minimum` and `maximum` (i.e. a bounded range), Tcases calculates the number of values
+    within the range that will be considered for test case generation, taking into account any `multipleOf` requirements. (This is for
+    the purpose of checking consistency with other schema constraints.) Since OpenAPI allows numeric values to be arbitrarily large,
+    a bounded range can be enormous! In previous releases, counting up the values for extremely large ranges was so slow that
+    Tcases appeared to freeze. This release fixes that problem by speeding up the counting process.
+
+## 4.0.4 ##
+
+This release provides the following improvements.
+
+  * **Decode `DecimalValue` from JSON correctly** [[289](https://github.com/Cornutum/tcases/issues/289)]
+
+    A test case generated from an OpenAPI definition may specify a constant input value that is a JSON-encoded `object` or `array`.
+    For example, this can occur when tests are generated from the `example` definitions. This release fixes a defect
+    that caused non-integral numbers in such JSON constants to be decoded incorrectly as integers.
+    
+  * **Maven plugin dependencies**
+
+    This release fixes a problem that caused some dependencies of the Tcases Maven Plugin to be incorrectly excluded.
+
+## 4.0.3 ##
+
+This release provides the following improvements.
+
+  * **Generate "not multiple" failure cases correctly** [[285](https://github.com/Cornutum/tcases/issues/285)]
+
+    When an input value is defined by a schema specifying a `multipleOf` requirement, Tcases will generate a failure
+    case using a value that is _not_ a multiple. This release fixes a defect would sometimes cause Tcases to incorrectly omit this
+    failure case or to spin forever trying to generate it. 
+    
+  * **Upgraded dependencies**
+
+    Upgraded to swagger-parser=2.1.20, slf4j-api=2.0.11, logback-classic=1.3.12
+
 ## 4.0.2 ##
 
 This release provides the following improvements.
